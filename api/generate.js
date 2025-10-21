@@ -1,5 +1,4 @@
-import { GoogleGenAI } from '@google/genai';
-import FormData from 'form-data';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import fetch from 'node-fetch';
 
 export default async function handler(req, res) {
@@ -17,8 +16,8 @@ export default async function handler(req, res) {
   // Try Gemini with retry logic
   for (let attempt = 0; attempt < 3 && !word; attempt++) {
     try {
-      const client = new GoogleGenAI(apiKey);
-      const model = client.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const genAI = new GoogleGenerativeAI(apiKey);
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
       const prompt = 'Generate one single, unique, and fictional but pronounceable word that has no real-world meaning. The word should be between 6 and 12 letters long. Return only the word itself, with no explanation, punctuation, or formatting.';
       const result = await model.generateContent(prompt);
       const response = await result.response;
@@ -48,15 +47,16 @@ export default async function handler(req, res) {
     
     if (clipdropKey) {
       try {
-        const form = new FormData();
-        form.append('prompt', `A dreamy, ethereal, abstract digital painting representing the concept of '${word}'. Soft pastel color palette, gentle gradients, sense of light and wonder, beautiful.`);
+        const formData = new URLSearchParams();
+        formData.append('prompt', `A dreamy, ethereal, abstract digital painting representing the concept of '${word}'. Soft pastel color palette, gentle gradients, sense of light and wonder, beautiful.`);
         
         const response = await fetch('https://clipdrop-api.co/text-to-image/v1', {
           method: 'POST',
           headers: {
-            'x-api-key': clipdropKey
+            'x-api-key': clipdropKey,
+            'Content-Type': 'application/x-www-form-urlencoded'
           },
-          body: form
+          body: formData
         });
         
         if (response.ok) {
