@@ -225,7 +225,13 @@ export const AppStateProvider: React.FC<AppStateProviderProps> = ({ children }) 
       if (savedProvider) setAiProvider(savedProvider);
       // API keys are already loaded in useState initializer
 
-      // Always fetch current active word from backend database
+      // Show cached data immediately, fetch in background
+      if (loadedWord) {
+        setCurrentWord(loadedWord);
+        if (savedSubmissions) setSubmissions(JSON.parse(savedSubmissions));
+      }
+      setIsLoading(false);
+
       const initializeApp = async () => {
         try {
           const res = await fetch('/api/current');
@@ -234,20 +240,11 @@ export const AppStateProvider: React.FC<AppStateProviderProps> = ({ children }) 
             if (data) {
               setCurrentWord(data);
               localStorage.setItem('currentWord', JSON.stringify(data));
-              setIsLoading(false);
-              return;
             }
           }
         } catch (e) {
           console.log('Backend not available');
         }
-
-        // Fallback to localStorage only if backend fails
-        if (loadedWord) {
-          setCurrentWord(loadedWord);
-          if (savedSubmissions) setSubmissions(JSON.parse(savedSubmissions));
-        }
-        setIsLoading(false);
       };
 
       initializeApp();

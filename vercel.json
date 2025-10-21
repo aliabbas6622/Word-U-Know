@@ -21,6 +21,14 @@
       "destination": "/api/archive.js"
     },
     {
+      "source": "/api/admin/login",
+      "destination": "/api/admin/login.js"
+    },
+    {
+      "source": "/api/admin/verify",
+      "destination": "/api/admin/verify.js"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
