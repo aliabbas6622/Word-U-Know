@@ -3,21 +3,17 @@ node_modules/
 .pnp
 .pnp.js
 
-# Testing
-coverage/
-
-# Production
-build/
-dist/
-out/
-
-# Environment variables
+# Environment Variables
 .env
 .env.local
-.env.firebase
 .env.development.local
 .env.test.local
 .env.production.local
+
+# Build Output
+dist/
+build/
+.vercel/
 
 # Logs
 npm-debug.log*
@@ -26,21 +22,20 @@ yarn-error.log*
 lerna-debug.log*
 .pnpm-debug.log*
 
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
 .DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+Thumbs.db
 
-# Vercel
-.vercel
+# Testing
+coverage/
 
-# TypeScript
-*.tsbuildinfo
-
-.vercel
+# Misc
+*.log
+.cache/

@@ -437,47 +437,45 @@ const scheduleNextGeneration = () => {
   console.log(`Next auto-generation scheduled in ${Math.round(timeUntilMidnight / 1000 / 60)} minutes`);
 };
 
+// Admin authentication endpoints
+import crypto from 'crypto';
+
+app.post('/api/admin/login', (req, res) => {
+  const { username, password } = req.body;
+  const adminUser = process.env.ADMIN_USERNAME || 'guy789';
+  const adminPass = process.env.ADMIN_PASSWORD || '789guy';
+  const jwtSecret = process.env.JWT_SECRET || crypto.randomBytes(32).toString('hex');
+
+  if (username === adminUser && password === adminPass) {
+    const token = crypto.createHmac('sha256', jwtSecret)
+      .update(`${username}:${Date.now()}`)
+      .digest('hex');
+    
+    return res.status(200).json({ 
+      token,
+      expiresIn: 86400000
+    });
+  }
+
+  return res.status(401).json({ error: 'Invalid credentials' });
+});
+
+app.get('/api/admin/verify', (req, res) => {
+  const token = req.headers.authorization?.replace('Bearer ', '');
+  
+  if (!token) {
+    return res.status(401).json({ error: 'No token provided' });
+  }
+
+  if (token.length === 64 && /^[a-f0-9]{64}$/.test(token)) {
+    return res.status(200).json({ valid: true });
+  }
+
+  return res.status(401).json({ error: 'Invalid token' });
+});
+
 const port = process.env.PORT || 4000;
 app.listen(port, () => {
   console.log(`Backend server running on http://localhost:${port}`);
   scheduleNextGeneration();
-});
-// Admin authentication endpoints
-app.post('/api/admin/login', (req, res) => {
-  const { username, password } = req.body;
-  
-  // Check against environment variables or database
-  const adminUser = process.env.ADMIN_USERNAME || 'admin6622';
-  const adminPass = process.env.ADMIN_PASSWORD || 'admin6633';
-  
-  if (username === adminUser && password === adminPass) {
-    // Generate simple token (in production, use JWT)
-    const token = Buffer.from(`${username}:${Date.now()}`).toString('base64');
-    res.json({ token });
-  } else {
-    res.status(401).json({ error: 'Invalid credentials' });
-  }
-});
-
-app.get('/api/admin/verify', (req, res) => {
-  const auth = req.headers.authorization;
-  if (!auth || !auth.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'No token provided' });
-  }
-  
-  const token = auth.split(' ')[1];
-  try {
-    // Decode and validate token (basic validation)
-    const decoded = Buffer.from(token, 'base64').toString();
-    const [username, timestamp] = decoded.split(':');
-    
-    // Token expires after 24 hours
-    if (Date.now() - parseInt(timestamp) > 24 * 60 * 60 * 1000) {
-      return res.status(401).json({ error: 'Token expired' });
-    }
-    
-    res.json({ valid: true, username });
-  } catch (error) {
-    res.status(401).json({ error: 'Invalid token' });
-  }
 });
