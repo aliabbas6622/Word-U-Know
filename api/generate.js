@@ -18,7 +18,7 @@ export default async function handler(req, res) {
   for (let attempt = 0; attempt < 3 && !word; attempt++) {
     try {
       const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
       const prompt = 'Generate one single, unique, and fictional but pronounceable word that has no real-world meaning. The word should be between 6 and 12 letters long. Return only the word itself, with no explanation, punctuation, or formatting.';
       const result = await model.generateContent(prompt);
       const response = await result.response;
@@ -48,8 +48,12 @@ export default async function handler(req, res) {
     
     if (clipdropKey) {
       try {
+        console.log('Attempting image generation for word:', word);
+        const prompt = `A dreamy, ethereal, abstract digital painting representing the concept of '${word}'. Soft pastel color palette, gentle gradients, sense of light and wonder, beautiful.`;
+        console.log('Using prompt:', prompt);
+        
         const formData = new FormData();
-        formData.append('prompt', `A dreamy, ethereal, abstract digital painting representing the concept of '${word}'. Soft pastel color palette, gentle gradients, sense of light and wonder, beautiful.`);
+        formData.append('prompt', prompt);
         
         const response = await fetch('https://clipdrop-api.co/text-to-image/v1', {
           method: 'POST',
@@ -59,12 +63,18 @@ export default async function handler(req, res) {
           body: formData
         });
         
+        console.log('ClipDrop response status:', response.status);
+        
         if (response.ok) {
           const buffer = await response.arrayBuffer();
           image = Buffer.from(buffer).toString('base64');
+          console.log('Image generated successfully, size:', buffer.byteLength);
+        } else {
+          const errorText = await response.text();
+          console.error('ClipDrop API error:', response.status, errorText);
         }
       } catch (e) {
-        console.error('Image generation failed');
+        console.error('Image generation failed:', e.message);
       }
     }
 
