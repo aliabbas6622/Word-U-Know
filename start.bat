@@ -1,0 +1,9 @@
+@echo off
+echo Installing dependencies...
+npm install
+echo.
+echo Starting backend server...
+start cmd /k "npm run server"
+timeout /t 3 /nobreak >nul
+echo Starting frontend...
+npm run dev
