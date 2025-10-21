@@ -45,22 +45,24 @@ const SubmissionForm: React.FC = () => {
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder="Paint your vision with words... What essence does this word hold?"
-            className="w-full min-h-[80px] max-h-[200px] p-3 sm:p-4 text-sm sm:text-base bg-white/90 backdrop-blur-sm border-2 border-purple-200/50 rounded-lg sm:rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-purple-300 transition-all text-gray-800 placeholder-gray-500 shadow-inner overflow-y-auto"
+            className="w-full min-h-[80px] max-h-[200px] p-3 sm:p-4 pr-16 sm:pr-20 pb-10 sm:pb-12 text-sm sm:text-base bg-white/90 backdrop-blur-sm border-2 border-purple-200/50 rounded-lg sm:rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-purple-300 transition-all text-gray-800 placeholder-gray-500 shadow-inner overflow-y-auto"
             maxLength={maxLength}
             rows={1}
           />
-          <div className="absolute bottom-3 sm:bottom-4 right-3 sm:right-4 flex items-center gap-2">
-            <span className={`text-xs font-medium px-2 py-1 rounded-full ${
+          <div className="absolute bottom-2 sm:bottom-3 right-2 sm:right-3 flex items-center gap-2 pointer-events-none">
+            <span className={`text-xs font-medium px-2 py-1 rounded-full backdrop-blur-sm ${
               text.length > maxLength * 0.8 
-                ? 'bg-red-100 text-red-600' 
-                : 'bg-gray-100 text-gray-500'
+                ? 'bg-red-100/90 text-red-600' 
+                : 'bg-gray-100/90 text-gray-500'
             }`}>
               {text.length} / {maxLength}
             </span>
           </div>
         </div>
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
-        <UsernameInput />
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-end justify-between gap-3 sm:gap-4">
+        <div className="flex-shrink-0">
+          <UsernameInput />
+        </div>
         <button
           type="submit"
           disabled={!text.trim() || isSubmitting}

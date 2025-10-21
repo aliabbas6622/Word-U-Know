@@ -226,32 +226,138 @@ app.post('/api/generate', async (req, res) => {
   }
 });
 
-// Abstract image generation endpoint with specific prompt template
-app.post('/api/generate-abstract-image', async (req, res) => {
-  const { word, customPrompt } = req.body || {};
+// Generate nonsense word endpoint
+app.post('/api/generate-word', async (req, res) => {
+  const { provider, apiKey } = req.body;
+  const key = apiKey || (provider === 'gemini' ? process.env.GEMINI_API_KEY : process.env.OPENAI_API_KEY);
   
-  if (!customPrompt && (!word || !word.trim())) {
-    return res.status(400).json({ error: 'Word or custom prompt is required' });
+  if (!key) {
+    return res.status(400).json({ error: `${provider} API key is required` });
   }
 
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) return res.status(500).json({ error: 'Server Gemini API key not configured.' });
+  try {
+    if (provider === 'openai') {
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${key}`
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [{ role: 'user', content: 'Generate one single, unique, and fictional but pronounceable word that has no real-world meaning. 6-12 letters. Return only the word itself, no explanation or punctuation.' }],
+          max_tokens: 10,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error?.message || "OpenAI word generation failed");
+      const word = data.choices[0].message.content.trim().replace(/[^a-zA-Z]/g, '');
+      res.json({ word });
+    } else {
+      const genAI = new GoogleGenerativeAI(key);
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const result = await model.generateContent('Generate one single, unique, and fictional but pronounceable word that has no real-world meaning. The word should be between 6 and 12 letters long. Return only the word itself, with no explanation, punctuation, or formatting.');
+      const response = await result.response;
+      const word = response.text().trim().replace(/[^a-zA-Z]/g, '');
+      res.json({ word });
+    }
+  } catch (e) {
+    console.error('Word generation failed:', e);
+    res.status(500).json({ error: 'Word generation failed', fallback: 'Glimmerfang' });
+  }
+});
+
+// Generate abstract image endpoint
+app.post('/api/generate-abstract-image', async (req, res) => {
+  const { provider, apiKey, prompt } = req.body;
+  const key = apiKey || (provider === 'gemini' ? process.env.GEMINI_API_KEY : process.env.OPENAI_API_KEY);
+  
+  if (!key) {
+    return res.status(400).json({ error: `${provider} API key is required` });
+  }
 
   try {
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-    
-    const abstractPrompt = customPrompt || `Generate an abstract, dreamlike description inspired by the imaginary word: "${word.trim()}". 
-The description should be open to multiple interpretations, allowing different viewers to imagine different shapes, objects, or emotions.`;
-    
-    const result = await model.generateContent(abstractPrompt);
-    const response = await result.response;
-
-    const text = response.text();
-    res.json({ description: text });
+    if (provider === 'openai') {
+      const fullPrompt = `A dreamy, ethereal, abstract digital painting representing the concept of '${prompt}'. Soft pastel color palette, gentle gradients, sense of light and wonder, beautiful.`;
+      const response = await fetch('https://api.openai.com/v1/images/generations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${key}`
+        },
+        body: JSON.stringify({
+          model: 'dall-e-3',
+          prompt: fullPrompt,
+          n: 1,
+          size: '1024x1024',
+          response_format: 'b64_json',
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error?.message || "OpenAI image generation failed");
+      res.json({ image: data.data[0].b64_json });
+    } else {
+      const genAI = new GoogleGenerativeAI(key);
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const fullPrompt = `A dreamy, ethereal, abstract digital painting representing the concept of '${prompt}'. Soft pastel color palette, gentle gradients, sense of light and wonder, beautiful.`;
+      const result = await model.generateContent(fullPrompt);
+      const response = await result.response;
+      res.json({ description: response.text() });
+    }
   } catch (e) {
     console.error('Abstract image generation failed:', e);
     res.status(500).json({ error: 'Abstract image generation failed' });
+  }
+});
+
+// Summarize definitions endpoint
+app.post('/api/summarize', async (req, res) => {
+  const { provider, apiKey, word, submissions } = req.body;
+  const key = apiKey || (provider === 'gemini' ? process.env.GEMINI_API_KEY : process.env.OPENAI_API_KEY);
+  
+  if (!key) {
+    return res.status(400).json({ error: `${provider} API key is required` });
+  }
+
+  if (!submissions || submissions.length === 0) {
+    return res.json({ definitions: ["No definitions were submitted."] });
+  }
+
+  try {
+    if (provider === 'openai') {
+      const prompt = `You are an AI analyzing definitions for a made-up word: "${word}". From the following submissions (with like counts), identify the top 3 most compelling themes. Return a JSON object with a single key "top_definitions" which is an array of 3 strings.\nSubmissions:\n${submissions.map(s => `- "${s.text}" (Likes: ${s.likes})`).join('\n')}`;
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${key}`
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [{ role: 'user', content: prompt }],
+          response_format: { type: "json_object" },
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error?.message || "OpenAI summarization failed");
+      const result = JSON.parse(data.choices[0].message.content);
+      res.json({ definitions: result.top_definitions || [] });
+    } else {
+      const genAI = new GoogleGenerativeAI(key);
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const prompt = `You are an AI that analyzes creative definitions for a made-up word. The word is "${word}". Below is a list of user-submitted definitions, some with upvote counts. Your task is to identify the top 3 most compelling, creative, or commonly recurring themes. Consider submissions with more "likes" as potentially more popular. Synthesize these into three concise, distinct definitions. Return as JSON with "top_definitions" array.\nSubmissions:\n${submissions.map(s => `- "${s.text}" (Likes: ${s.likes})`).join('\n')}`;
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      try {
+        const parsed = JSON.parse(response.text().trim());
+        res.json({ definitions: parsed.top_definitions || [] });
+      } catch {
+        res.json({ definitions: [response.text().trim()] });
+      }
+    }
+  } catch (e) {
+    console.error('Summarization failed:', e);
+    res.status(500).json({ error: 'Summarization failed', fallback: ["AI summarization failed. Please try again later."] });
   }
 });
 

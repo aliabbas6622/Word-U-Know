@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { DailyWord, Submission, ArchivedWord, AiProvider } from '../types';
-import { generateNonsenseWord, generateAbstractImage, summarizeDefinitions } from '../services/geminiService';
+import { generateNonsenseWord, generateAbstractImage, summarizeDefinitions } from '../services/apiService';
 import { generateImageWithClipDrop } from '../services/clipdropService';
 import { useNotification } from './NotificationContext';
 import { subscribeToSubmissions, addSubmission as addSubmissionToFirebase, updateSubmissionLikes, clearSubmissions } from '../services/firebaseService';

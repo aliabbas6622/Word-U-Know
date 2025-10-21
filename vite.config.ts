@@ -27,6 +27,7 @@ export default defineConfig(({ mode }) => {
       },
       build: {
         rollupOptions: {
+          external: ['@google/generative-ai'],
           output: {
             manualChunks: {
               'react-vendor': ['react', 'react-dom', 'react-router-dom'],

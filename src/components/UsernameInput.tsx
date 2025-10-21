@@ -61,8 +61,8 @@ const UsernameInput: React.FC<Props> = ({ value, onChange }) => {
   const displayName = typeof value !== 'undefined' ? value : ctxUsername;
 
   return (
-    <div className="flex flex-col gap-1">
-      <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600">
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600 flex-wrap">
         <span className="whitespace-nowrap">Submitting as</span>
         {isEditing ? (
           <input
@@ -72,13 +72,13 @@ const UsernameInput: React.FC<Props> = ({ value, onChange }) => {
             onChange={(e) => setName(e.target.value)}
             onBlur={handleBlur}
             onKeyDown={handleKeyDown}
-            className="font-semibold bg-white text-purple-700 px-2 py-1 border-2 border-purple-300 rounded focus:outline-none focus:border-purple-500 transition-colors min-w-[120px]"
+            className="font-semibold bg-white text-purple-700 px-2 py-1 border-2 border-purple-300 rounded focus:outline-none focus:border-purple-500 transition-colors min-w-[120px] max-w-[200px]"
             maxLength={30}
           />
         ) : (
-          <div className="flex items-center gap-1.5 bg-purple-50 px-2 py-1 rounded-lg">
-            <span className="font-semibold text-purple-700">{displayName}</span>
-            <button onClick={() => setIsEditing(true)} aria-label="Edit username" className="text-purple-500 hover:text-purple-700 transition-colors">
+          <div className="flex items-center gap-1.5 bg-purple-50 px-2 py-1 rounded-lg max-w-[200px]">
+            <span className="font-semibold text-purple-700 truncate">{displayName}</span>
+            <button onClick={() => setIsEditing(true)} aria-label="Edit username" className="text-purple-500 hover:text-purple-700 transition-colors flex-shrink-0">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 sm:h-4 sm:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z" />
               </svg>
@@ -86,7 +86,7 @@ const UsernameInput: React.FC<Props> = ({ value, onChange }) => {
           </div>
         )}
       </div>
-      {error && <span className="text-xs text-red-500">{error}</span>}
+      {error && <span className="text-xs text-red-500 mt-1">{error}</span>}
     </div>
   );
 };

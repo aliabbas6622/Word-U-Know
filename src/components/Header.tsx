@@ -54,8 +54,8 @@ const Header: React.FC = () => {
           <div className="w-full max-w-lg">
             <label htmlFor="site-search" className="sr-only">Search</label>
             <div className="relative">
-              <input id="site-search" type="search" placeholder="Search..." className="w-full pl-10 pr-4 py-2 text-sm rounded-lg border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)]" />
-              <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+              <input id="site-search" type="search" placeholder="Search..." className="w-full pl-10 pr-4 py-2 text-sm rounded-lg border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)] placeholder:text-gray-400" />
+              <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
@@ -113,8 +113,8 @@ const Header: React.FC = () => {
                     <div className="mb-4">
                       <label htmlFor="mobile-search" className="sr-only">Search</label>
                       <div className="relative">
-                        <input id="mobile-search" type="search" placeholder="Search archive..." className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border border-purple-200 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500" />
-                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                        <input id="mobile-search" type="search" placeholder="Search archive..." className="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border border-purple-200 bg-white focus:outline-none focus:ring-2 focus:ring-purple-500 placeholder:text-gray-400" />
+                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                           </svg>
