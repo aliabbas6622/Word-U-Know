@@ -5,6 +5,22 @@
   "installCommand": "npm install",
   "rewrites": [
     {
+      "source": "/api/current",
+      "destination": "/api/current.js"
+    },
+    {
+      "source": "/api/generate",
+      "destination": "/api/generate.js"
+    },
+    {
+      "source": "/api/submissions",
+      "destination": "/api/submissions.js"
+    },
+    {
+      "source": "/api/archive",
+      "destination": "/api/archive.js"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
