@@ -1,7 +1,7 @@
 import express from 'express';
 import fs from 'fs';
 import path from 'path';
-import { GoogleGenAI, Modality } from '@google/genai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { v4 as uuidv4 } from 'uuid';
 
 let __dirname = path.dirname(new URL(import.meta.url).pathname);
@@ -81,13 +81,12 @@ app.post('/api/submit', (req, res) => {
       try {
         const apiKey = process.env.GEMINI_API_KEY;
         if (!apiKey) throw new Error('Gemini API key not set');
-        const client = new GoogleGenAI({ apiKey });
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
         const fullPrompt = `A dreamy, ethereal, abstract digital painting representing the concept of '${text}'. Soft pastel color palette, gentle gradients, sense of light and wonder, beautiful.`;
-        const response = await client.models.generateContent({
-          model: 'gemini-2.5-flash-image',
-          contents: { parts: [{ text: fullPrompt }] },
-          config: { responseModalities: [Modality.IMAGE] }
-        });
+        const result = await model.generateContent(fullPrompt);
+        const response = await result.response;
+        // Note: Text-only model, no image generation in server
         const candidate = response.candidates?.[0];
         for (const part of candidate?.content?.parts || []) {
           if (part.inlineData && part.inlineData.data) {
@@ -177,8 +176,9 @@ app.post('/api/generate', async (req, res) => {
 
     // Generate AI meaning for the word
     const meaningPrompt = `Create a poetic, whimsical definition for the fictional word "${word}". Make it creative, imaginative, and 1-2 sentences long.`;
-    const meaningResponse = await client.models.generateContent({ model: 'gemini-2.5-flash', contents: meaningPrompt });
-    const aiMeaning = (meaningResponse.text || '').trim();
+    const meaningResult = await model.generateContent(meaningPrompt);
+    const meaningResponse = await meaningResult.response;
+    const aiMeaning = meaningResponse.text().trim();
 
     // 2. Generate the image using ClipDrop
     let image = null;
@@ -238,32 +238,17 @@ app.post('/api/generate-abstract-image', async (req, res) => {
   if (!apiKey) return res.status(500).json({ error: 'Server Gemini API key not configured.' });
 
   try {
-    const client = new GoogleGenAI({ apiKey });
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
     
-    const abstractPrompt = customPrompt || `Generate an abstract, dreamlike image inspired by the imaginary word: "${word.trim()}". 
-The image should be open to multiple interpretations, allowing different viewers to see different shapes, objects, or emotions. Avoid clear or literal objects. 
-Use a soft, ethereal, mysterious visual style with subtle gradients, blurred organic forms, flowing contrast, and atmospheric lighting. 
-The overall mood should provoke curiosity and imagination rather than define anything concrete.
-Ultra high resolution, cinematic feel, slightly surreal.`;
+    const abstractPrompt = customPrompt || `Generate an abstract, dreamlike description inspired by the imaginary word: "${word.trim()}". 
+The description should be open to multiple interpretations, allowing different viewers to imagine different shapes, objects, or emotions.`;
     
-    const response = await client.models.generateContent({
-      model: 'gemini-2.5-flash-image',
-      contents: { parts: [{ text: abstractPrompt }] },
-      config: { responseModalities: [Modality.IMAGE] }
-    });
+    const result = await model.generateContent(abstractPrompt);
+    const response = await result.response;
 
-    const candidate = response.candidates?.[0];
-    if (!candidate) throw new Error('No image candidate');
-    let b64 = null;
-    for (const part of candidate.content?.parts || []) {
-      if (part.inlineData && part.inlineData.data) {
-        b64 = part.inlineData.data;
-        break;
-      }
-    }
-    if (!b64) throw new Error('No image data found');
-
-    res.json({ image: b64 });
+    const text = response.text();
+    res.json({ description: text });
   } catch (e) {
     console.error('Abstract image generation failed:', e);
     res.status(500).json({ error: 'Abstract image generation failed' });
@@ -286,27 +271,15 @@ app.post('/api/generate-image', async (req, res) => {
   if (!apiKey) return res.status(500).json({ error: 'Server Gemini API key not configured.' });
 
   try {
-    const client = new GoogleGenAI({ apiKey });
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
     const fullPrompt = `A dreamy, ethereal, abstract digital painting representing the concept of '${prompt}'. Soft pastel color palette, gentle gradients, sense of light and wonder, beautiful.`;
-    const response = await client.models.generateContent({
-      model: 'gemini-2.5-flash-image',
-      contents: { parts: [{ text: fullPrompt }] },
-      config: { responseModalities: [Modality.IMAGE] }
-    });
+    const result = await model.generateContent(fullPrompt);
+    const response = await result.response;
+    const text = response.text();
 
-    const candidate = response.candidates?.[0];
-    if (!candidate) throw new Error('No image candidate');
-    let b64 = null;
-    for (const part of candidate.content?.parts || []) {
-      if (part.inlineData && part.inlineData.data) {
-        b64 = part.inlineData.data;
-        break;
-      }
-    }
-    if (!b64) throw new Error('No image data found');
-
-    // Return base64 string
-    res.json({ image: b64 });
+    // Return description instead of image
+    res.json({ description: text });
   } catch (e) {
     console.error('Image generation failed:', e);
     res.status(500).json({ error: 'Image generation failed' });
@@ -384,14 +357,17 @@ const scheduleNextGeneration = () => {
         return;
       }
 
-      const client = new GoogleGenAI({ apiKey });
+      const genAI = new GoogleGenerativeAI(apiKey);
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
       const prompt = 'Generate one single, unique, and fictional but pronounceable word that has no real-world meaning. The word should be between 6 and 12 letters long. Return only the word itself, with no explanation, punctuation, or formatting.';
-      const response = await client.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt });
-      const word = (response.text || '').trim().replace(/[^a-zA-Z]/g, '').slice(0, 12);
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const word = response.text().trim().replace(/[^a-zA-Z]/g, '').slice(0, 12);
 
       const meaningPrompt = `Create a poetic, whimsical definition for the fictional word "${word}". Make it creative, imaginative, and 1-2 sentences long.`;
-      const meaningResponse = await client.models.generateContent({ model: 'gemini-2.5-flash', contents: meaningPrompt });
-      const aiMeaning = (meaningResponse.text || '').trim();
+      const meaningResult = await model.generateContent(meaningPrompt);
+      const meaningResponse = await meaningResult.response;
+      const aiMeaning = meaningResponse.text().trim();
 
       let image = null;
       if (clipdropKey) {
