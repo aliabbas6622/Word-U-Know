@@ -48,14 +48,13 @@ export default async function handler(req, res) {
     
     if (clipdropKey) {
       try {
-        const formData = new URLSearchParams();
+        const formData = new FormData();
         formData.append('prompt', `A dreamy, ethereal, abstract digital painting representing the concept of '${word}'. Soft pastel color palette, gentle gradients, sense of light and wonder, beautiful.`);
         
         const response = await fetch('https://clipdrop-api.co/text-to-image/v1', {
           method: 'POST',
           headers: {
-            'x-api-key': clipdropKey,
-            'Content-Type': 'application/x-www-form-urlencoded'
+            'x-api-key': clipdropKey
           },
           body: formData
         });

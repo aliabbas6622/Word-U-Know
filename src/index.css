@@ -16,6 +16,26 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   transition: background-color 0.3s ease;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+/* Prevent zoom on laptops */
+@media screen and (min-width: 1024px) {
+  html {
+    font-size: 16px;
+  }
+  
+  body {
+    font-size: 16px;
+  }
+}
+
+/* Ensure proper scaling on high-DPI displays */
+@media screen and (-webkit-min-device-pixel-ratio: 2) {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
 }
 
 .dark body {
