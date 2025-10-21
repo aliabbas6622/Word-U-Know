@@ -1,6 +1,5 @@
+// ✅ Load environment variables only in development
 import dotenv from 'dotenv';
-
-// Load local env vars only during development
 if (process.env.NODE_ENV !== 'production') {
   dotenv.config({ path: '.env.local' });
 }
