@@ -175,39 +175,45 @@ export const AppStateProvider: React.FC<AppStateProviderProps> = ({ children }) 
     setSubmissions([]);
     localStorage.setItem('submissions', JSON.stringify([]));
 
-    // 3. Generate new word
+    // 3. Generate new word using API
     try {
         const today = getTodayDateString();
-        const cachedData = localStorage.getItem(`wordData_${today}`);
-        if (cachedData) {
-          const data = JSON.parse(cachedData);
-          setCurrentWord(data);
-          setIsLoading(false);
-          return;
-        }
-
-        const word = await generateNonsenseWord(aiProvider, getApiKey());
-        let image = undefined;
         
-        if (enableImages && apiKeys.clipdrop) {
-          try {
-            image = await generateImageWithClipDrop(apiKeys.clipdrop, word);
-          } catch (e) {
-            console.error('ClipDrop image generation failed:', e);
-          }
+        // Clear cached data for today
+        localStorage.removeItem(`wordData_${today}`);
+        localStorage.removeItem('currentWord');
+        
+        // Call the generate API
+        const response = await fetch('/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            geminiKey: apiKeys.gemini,
+            clipdropKey: apiKeys.clipdrop
+          })
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || 'Failed to generate new word');
         }
         
-        const wordData = { word, image, date: getTodayDateString() };
+        const wordData = await response.json();
+        
+        // Save to localStorage and update state
         localStorage.setItem(`wordData_${today}`, JSON.stringify(wordData));
         localStorage.setItem('currentWord', JSON.stringify(wordData));
         setCurrentWord(wordData);
+        
+        showNotification(`✨ New word generated: ${wordData.word}`, 'success');
     } catch (e) {
         console.error("Failed to generate new day:", e);
-        setCurrentWord({ word: "Error", image: undefined, date: getTodayDateString() });
+        showNotification('Failed to generate new word. Please try again.', 'error');
+        throw e; // Re-throw so AdminPanel can handle the error
     } finally {
         setIsLoading(false);
     }
-  }, [currentWord, submissions, aiProvider, apiKeys, getApiKey, enableImages, showNotification, archive]);
+  }, [currentWord, submissions, apiKeys, showNotification, archive]);
 
   useEffect(() => {
     // Load state from local storage on initial mount

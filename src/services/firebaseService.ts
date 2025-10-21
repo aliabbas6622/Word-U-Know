@@ -12,15 +12,11 @@ import {
   onSnapshot,
   Timestamp,
   deleteDoc,
-  writeBatch,
-  enableIndexedDbPersistence
+  writeBatch
 } from 'firebase/firestore';
 import { DailyWord, Submission, ArchivedWord } from '../types';
 
-// Enable offline persistence (deprecated warning suppressed)
-try {
-  enableIndexedDbPersistence(db).catch(() => {});
-} catch (err) {}
+
 
 const COLLECTIONS = {
   DAILY_WORDS: 'dailyWords',

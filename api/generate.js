@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import fetch from 'node-fetch';
+import { db } from '../lib/firebaseAdmin.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -70,6 +71,15 @@ export default async function handler(req, res) {
 
     const today = new Date().toISOString().split('T')[0];
     const wordData = { word, image, date: today };
+
+    // Save to Firebase
+    try {
+      await db.collection('words').doc('current').set(wordData);
+      console.log('Word saved to Firebase:', word);
+    } catch (firebaseError) {
+      console.error('Failed to save to Firebase:', firebaseError);
+      // Continue anyway, return the word data
+    }
 
     res.status(200).json(wordData);
   } catch (e) {

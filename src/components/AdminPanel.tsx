@@ -196,25 +196,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ isVisible, onClose }) => {
     setErrorMessage(null);
     
     try {
-      const response = await fetch('/api/generate', { 
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          geminiKey: apiKeys.gemini,
-          clipdropKey: apiKeys.clipdrop 
-        })
-      });
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Failed to generate new word from server');
-      }
-      
-      const today = new Date().toISOString().split('T')[0];
-      localStorage.removeItem(`wordData_${today}`);
-      localStorage.removeItem('currentWord');
-      localStorage.removeItem('submissions');
-      
-      window.location.reload();
+      await generateNewDay();
+      setLoadingState(LOADING_STATES.IDLE);
     } catch (error) {
       console.error('Error generating new day:', error);
       setLoadingState(LOADING_STATES.ERROR);
