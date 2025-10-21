@@ -46,17 +46,7 @@ const HomePage: React.FC = () => {
       </AnimatePresence>
 
       <AnimatePresence mode="wait">
-        {isLoading ? (
-          <motion.div 
-            className="flex flex-col items-center justify-center min-h-[50vh] sm:min-h-[60vh]"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            <LoadingSpinner text="Dreaming up a new word..." />
-          </motion.div>
-        ) : currentWord ? (
+        {currentWord ? (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -108,17 +98,7 @@ const HomePage: React.FC = () => {
               </div>
             )}
           </motion.div>
-        ) : (
-          <motion.div 
-            className="text-center bg-gray-50 text-gray-500 p-6 sm:p-8 rounded-lg flex flex-col items-center justify-center min-h-[50vh] sm:min-h-[60vh] border border-gray-200"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            <LoadingSpinner text="Initializing..." />
-          </motion.div>
-        )}
+        ) : null}
       </AnimatePresence>
     </motion.div>
   );
