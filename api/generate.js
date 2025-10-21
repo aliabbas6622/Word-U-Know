@@ -1,4 +1,6 @@
-import { GoogleGenAI, Modality } from '@google/genai';
+import { GoogleGenAI } from '@google/genai';
+import FormData from 'form-data';
+import fetch from 'node-fetch';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -10,12 +12,33 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Configuration error' });
   }
 
+  let word = null;
+  
+  // Try Gemini with retry logic
+  for (let attempt = 0; attempt < 3 && !word; attempt++) {
+    try {
+      const client = new GoogleGenAI(apiKey);
+      const model = client.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const prompt = 'Generate one single, unique, and fictional but pronounceable word that has no real-world meaning. The word should be between 6 and 12 letters long. Return only the word itself, with no explanation, punctuation, or formatting.';
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const raw = response.text().trim();
+      word = raw.replace(/[^a-zA-Z]/g, '').slice(0, 12);
+      break;
+    } catch (geminiError) {
+      console.warn(`Gemini attempt ${attempt + 1} failed:`, geminiError.message);
+      if (attempt < 2) await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+    }
+  }
+  
+  // Fallback word list if Gemini fails
+  if (!word) {
+    const fallbackWords = ['Zephyria', 'Lumindra', 'Vorthak', 'Mystral', 'Quixara', 'Nethys', 'Valdris', 'Xylorin', 'Threnody', 'Umbralux'];
+    word = fallbackWords[Math.floor(Math.random() * fallbackWords.length)];
+    console.log('Using fallback word:', word);
+  }
+  
   try {
-    const client = new GoogleGenAI({ apiKey });
-    const prompt = 'Generate one single, unique, and fictional but pronounceable word that has no real-world meaning. The word should be between 6 and 12 letters long. Return only the word itself, with no explanation, punctuation, or formatting.';
-    const response = await client.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt });
-    const raw = (response.text || '').trim();
-    const word = raw.replace(/[^a-zA-Z]/g, '').slice(0, 12);
 
     let image = null;
     const clipdropKey = process.env.CLIPDROP_API_KEY;
