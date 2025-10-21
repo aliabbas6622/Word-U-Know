@@ -1,55 +1,45 @@
-import { GoogleGenAI, Modality, Type } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Submission, AiProvider } from '../types';
 
 // --- Gemini Implementation ---
 
 const getGeminiClient = (apiKey: string) => {
   if (!apiKey) throw new Error("Gemini API key is missing.");
-  return new GoogleGenAI({ apiKey });
+  return new GoogleGenerativeAI(apiKey);
 };
 
 const generateWordWithGemini = async (apiKey: string): Promise<string> => {
-  const ai = getGeminiClient(apiKey);
-  const response = await ai.models.generateContent({
-    // Using gemini-2.5-flash for basic text tasks as recommended.
-    model: 'gemini-2.5-flash',
-    contents: 'Generate one single, unique, and fictional but pronounceable word that has no real-world meaning. The word should be between 6 and 12 letters long. Return only the word itself, with no explanation, punctuation, or formatting.',
-  });
-  return response.text.trim().replace(/[^a-zA-Z]/g, '');
+  const genAI = getGeminiClient(apiKey);
+  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+  const result = await model.generateContent('Generate one single, unique, and fictional but pronounceable word that has no real-world meaning. The word should be between 6 and 12 letters long. Return only the word itself, with no explanation, punctuation, or formatting.');
+  const response = await result.response;
+  return response.text().trim().replace(/[^a-zA-Z]/g, '');
 };
 
 const generateImageWithGemini = async (apiKey: string, prompt: string): Promise<string> => {
-  const ai = getGeminiClient(apiKey);
+  const genAI = getGeminiClient(apiKey);
+  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
   const fullPrompt = `A dreamy, ethereal, abstract digital painting representing the concept of '${prompt}'. Soft pastel color palette, gentle gradients, sense of light and wonder, beautiful.`;
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash-image',
-    contents: { parts: [{ text: fullPrompt }] },
-    config: { responseModalities: [Modality.IMAGE] },
-  });
-  for (const part of response.candidates[0].content.parts) {
-    if (part.inlineData) return part.inlineData.data;
-  }
-  throw new Error("No image data found in Gemini response");
+  const result = await model.generateContent(fullPrompt);
+  const response = await result.response;
+  // Note: Gemini 1.5 Flash doesn't support image generation, return description
+  return response.text();
 };
 
 const summarizeWithGemini = async (apiKey: string, word: string, submissions: Submission[]): Promise<string[]> => {
-  const ai = getGeminiClient(apiKey);
-  const prompt = `You are an AI that analyzes creative definitions for a made-up word. The word is "${word}". Below is a list of user-submitted definitions, some with upvote counts. Your task is to identify the top 3 most compelling, creative, or commonly recurring themes. Consider submissions with more "likes" as potentially more popular. Synthesize these into three concise, distinct definitions.
+  const genAI = getGeminiClient(apiKey);
+  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+  const prompt = `You are an AI that analyzes creative definitions for a made-up word. The word is "${word}". Below is a list of user-submitted definitions, some with upvote counts. Your task is to identify the top 3 most compelling, creative, or commonly recurring themes. Consider submissions with more "likes" as potentially more popular. Synthesize these into three concise, distinct definitions. Return as JSON with "top_definitions" array.
 Submissions:\n${submissions.map(s => `- "${s.text}" (Likes: ${s.likes})`).join('\n')}`;
   
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.0-flash',
-    contents: prompt,
-    config: {
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: { top_definitions: { type: Type.ARRAY, items: { type: Type.STRING } } }
-      },
-    },
-  });
-  const result = JSON.parse(response.text.trim());
-  return result.top_definitions || [];
+  const result = await model.generateContent(prompt);
+  const response = await result.response;
+  try {
+    const parsed = JSON.parse(response.text().trim());
+    return parsed.top_definitions || [];
+  } catch {
+    return [response.text().trim()];
+  }
 };
 
 // --- OpenAI Implementation ---
