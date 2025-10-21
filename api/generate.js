@@ -5,13 +5,6 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // CSRF protection - check origin
-  const origin = req.headers.origin || req.headers.referer;
-  const allowedOrigins = [process.env.ALLOWED_ORIGIN, 'http://localhost:3000', 'http://localhost:5173'];
-  if (origin && !allowedOrigins.some(allowed => origin.startsWith(allowed))) {
-    return res.status(403).json({ error: 'Forbidden' });
-  }
-
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     return res.status(500).json({ error: 'Configuration error' });
