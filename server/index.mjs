@@ -1,3 +1,10 @@
+import dotenv from 'dotenv';
+
+// Load local env vars only during development
+if (process.env.NODE_ENV !== 'production') {
+  dotenv.config({ path: '.env.local' });
+}
+
 import express from 'express';
 import fs from 'fs';
 import path from 'path';
@@ -5,25 +12,6 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { v4 as uuidv4 } from 'uuid';
 
 let __dirname = path.dirname(new URL(import.meta.url).pathname);
-
-// Load environment variables from .env.local (development only)
-if (process.env.NODE_ENV !== 'production') {
-  const envPath = path.resolve(__dirname, '..', '.env.local');
-  if (fs.existsSync(envPath)) {
-    const envContent = fs.readFileSync(envPath, 'utf8');
-    envContent.split('\n').forEach(line => {
-      line = line.trim();
-      if (line && !line.startsWith('#')) {
-        const eqIndex = line.indexOf('=');
-        if (eqIndex > 0) {
-          const key = line.substring(0, eqIndex).trim();
-          const value = line.substring(eqIndex + 1).trim();
-          if (key && value) process.env[key] = value;
-        }
-      }
-    });
-  }
-}
 
 // Fix Windows leading slash (e.g., /C:/...)
 if (/^\/[A-Za-z]:\//.test(__dirname)) {
