@@ -6,30 +6,44 @@ import { v4 as uuidv4 } from 'uuid';
 
 let __dirname = path.dirname(new URL(import.meta.url).pathname);
 
-// Load environment variables from .env.local
-const envPath = path.resolve(__dirname, '..', '.env.local');
-if (fs.existsSync(envPath)) {
-  const envContent = fs.readFileSync(envPath, 'utf8');
-  envContent.split('\n').forEach(line => {
-    line = line.trim();
-    if (line && !line.startsWith('#')) {
-      const eqIndex = line.indexOf('=');
-      if (eqIndex > 0) {
-        const key = line.substring(0, eqIndex).trim();
-        const value = line.substring(eqIndex + 1).trim();
-        if (key && value) process.env[key] = value;
+// Load environment variables from .env.local (development only)
+if (process.env.NODE_ENV !== 'production') {
+  const envPath = path.resolve(__dirname, '..', '.env.local');
+  if (fs.existsSync(envPath)) {
+    const envContent = fs.readFileSync(envPath, 'utf8');
+    envContent.split('\n').forEach(line => {
+      line = line.trim();
+      if (line && !line.startsWith('#')) {
+        const eqIndex = line.indexOf('=');
+        if (eqIndex > 0) {
+          const key = line.substring(0, eqIndex).trim();
+          const value = line.substring(eqIndex + 1).trim();
+          if (key && value) process.env[key] = value;
+        }
       }
-    }
-  });
-  console.log('Loaded env vars:', Object.keys(process.env).filter(k => k.includes('API')));
+    });
+  }
 }
+
 // Fix Windows leading slash (e.g., /C:/...)
 if (/^\/[A-Za-z]:\//.test(__dirname)) {
   __dirname = __dirname.slice(1);
 }
-const DATA_FILE = path.resolve(__dirname, 'data.json');
+
+// Use /tmp for data file in production (Render writable directory)
+const DATA_FILE = process.env.NODE_ENV === 'production' 
+  ? '/tmp/data.json' 
+  : path.resolve(__dirname, 'data.json');
+
 const app = express();
 app.use(express.json());
+
+// Serve static files from dist directory
+const distPath = path.resolve(__dirname, '..', 'dist');
+if (fs.existsSync(distPath)) {
+  app.use(express.static(distPath));
+  console.log('Serving static files from:', distPath);
+}
 
 // Ensure data file exists
 if (!fs.existsSync(DATA_FILE)) {
@@ -556,8 +570,23 @@ app.get('/api/admin/verify', (req, res) => {
   return res.status(401).json({ error: 'Invalid token' });
 });
 
+// Serve React app for all non-API routes
+app.get('*', (req, res) => {
+  if (!req.path.startsWith('/api')) {
+    const indexPath = path.resolve(__dirname, '..', 'dist', 'index.html');
+    if (fs.existsSync(indexPath)) {
+      res.sendFile(indexPath);
+    } else {
+      res.status(404).send('Frontend build not found');
+    }
+  } else {
+    res.status(404).json({ error: 'API endpoint not found' });
+  }
+});
+
 const port = process.env.PORT || 4000;
-app.listen(port, () => {
-  console.log(`Backend server running on http://localhost:${port}`);
+app.listen(port, '0.0.0.0', () => {
+  console.log(`Server running on port ${port}`);
+  console.log('Environment:', process.env.NODE_ENV || 'development');
   scheduleNextGeneration();
 });
